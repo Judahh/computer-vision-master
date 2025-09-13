@@ -1,3 +1,13 @@
+# a) Estime o ruído de seu sistema de aquisição de imagens (pode ser uma webcamera ou
+# qualquer outra) usando os passos propostos no algoritmo EST_NOISE e
+# AUTO_COVARIANCE, expostos nos slides em sala de aula. Você precisará capturar
+# diversas imagens da mesma cena estática, em um ambiente sem variações de iluminação
+# (lâmpadas fluorescentes afetam a iluminação das imagens, bem como imagens externas de
+# nuvens e árvores, sendo indicada cena interna e com fixação perfeita da câmera), plotando
+# depois o gráfico da intensidade da imagem ao longo de uma linha e a variação produzida pelo
+# ruído. Esta variação deverá ser pequena, da ordem de menos de 5% em geral, dependendo da
+# qualidade da câmera. Discuta os resultados.
+
 import os
 from PIL import Image
 import numpy as np
@@ -202,7 +212,8 @@ def covariance_image(folder, average="neighbors_average.npz", output="covariance
         np_img = image_to_array(file, width, height)
         # print(f'Imagem-{index}')
         # print(np_img)
-        result = np_img * avg * c
+        result = np_img * avg
+        result = result * c
         name = f"{output}{index}"
         save_image(result, name, img_type)
         index += 1

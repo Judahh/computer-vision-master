@@ -11,74 +11,103 @@ import numpy as np
 from PIL import Image
 from skimage.transform import resize
 
-
-def roberts_edge_det(img: np.ndarray, tau: float) -> np.ndarray:
+def linear_filter(I: np.ndarray, A: np.ndarray) -> np.ndarray:
     """
-    Implementação do detector de bordas de Roberts.
-    Entrada:  img - imagem em escala de cinza
-              tau - limiar para detecção de bordas
-    Saída:    bordas binárias (0/255)
+    Implementação manual de filtro linear 2D por convolução.
+    I: imagem (numpy array 2D)
+    A: máscara do filtro (numpy array m x m, com m ímpar)
     """
+    m = A.shape[0]  # tamanho do kernel (supomos quadrado e ímpar)
+    assert m % 2 == 1, "O tamanho da máscara deve ser ímpar"
+    
+    offset = m // 2
+    N, M = I.shape
+    IA = np.zeros_like(I, dtype=np.float64)
 
-    # 1. Suavização com filtro Gaussiano
+    # Percorrer cada pixel da imagem
+    for i in range(offset, N - offset):
+        for j in range(offset, M - offset):
+            # Extrair vizinhança
+            region = I[i - offset:i + offset + 1, j - offset:j + offset + 1]
+            # Produto elemento a elemento e soma
+            IA[i, j] = np.sum(A * region)
+
+    # Normalizar para valores válidos (0-255 se imagem)
+    IA = np.clip(IA, 0, 255)
+    return IA.astype(np.uint8)
+
+def roberts_step_1(img: np.ndarray):
+    # filtro feijão com arroz
     img_s = cv2.GaussianBlur(img, (5, 5), 1)
+    return img_s
 
-    # 2. Máscaras de Roberts
-    kx = np.array([[1, -1], [-1, 1]], dtype=np.float32)
-    ky = np.array([[-1, 1], [1, -1]], dtype=np.float32)
 
-    # 3. Convolução
-    gx = cv2.filter2D(img_s, cv2.CV_32F, kx)
-    gy = cv2.filter2D(img_s, cv2.CV_32F, ky)
+def roberts_step_2(img_s: np.ndarray):
+    # mascaras
+    kx = np.array([
+        [1, -1],
+        [-1, 1]
+    ], dtype=np.float32)
+    ky = np.array([
+        [-1, 1],
+        [1, -1]
+    ], dtype=np.float32)
+    gx = linear_filter(kx, img_s)
+    gy = linear_filter(ky, img_s)
+    return gx, gy
 
-    # 4. Magnitude do gradiente
+
+def sobel_step_2(img_s: np.ndarray):
+    # mascaras
+    kx = np.array([
+        [-1, -2, -1],
+        [0, 0, 0],
+        [1, 2, 1]
+    ], dtype=np.float32)
+    ky = np.array([
+        [-1, 0, 1],
+        [-2, 0, 2],
+        [-1, 0, 1]
+    ], dtype=np.float32)
+    gx = linear_filter(kx, img_s)
+    gy = linear_filter(ky, img_s)
+    return gx, gy
+
+
+def roberts_step_3(gx, gy):
+    # Magnitude
     g = np.sqrt(gx**2 + gy**2)
 
     # Normalizar para 0-255
     g = (g / g.max()) * 255
     g = g.astype(np.uint8)
+    return g
 
-    # 5. Aplicar limiar
+
+def roberts_step_4(g, tau):
     edges = np.zeros_like(g, dtype=np.uint8)
     edges[g > tau] = 255
-
     return edges
+
+
+def roberts_edge_det(img: np.ndarray, tau: float) -> np.ndarray:
+    img_s = roberts_step_1(img)
+
+    gx, gy = roberts_step_2(img_s)
+
+    g = roberts_step_3(gx, gy)
+
+    return roberts_step_4(g, tau)
 
 
 def sobel_edge_det(img: np.ndarray, tau: float) -> np.ndarray:
-    """
-    Implementação do detector de bordas de Sobel.
-    Entrada:  img - imagem em escala de cinza
-              tau - limiar para detecção de bordas
-    Saída:    bordas binárias (0/255)
-    """
+    img_s = roberts_step_1(img)
 
-    # 1. Suavização
-    img_s = cv2.GaussianBlur(img, (5, 5), 1)
+    gx, gy = sobel_step_2(img_s)
 
-    # 2. Máscaras de Sobel
-    kx = np.array([[-1, -2, -1],
-                   [0, 0, 0],
-                   [1, 2, 1]], dtype=np.float32)
+    g = roberts_step_3(gx, gy)
 
-    ky = np.array([[-1, 0, 1],
-                   [-2, 0, 2],
-                   [-1, 0, 1]], dtype=np.float32)
-
-    # 3. Convolução
-    gx = cv2.filter2D(img_s, cv2.CV_32F, kx)
-    gy = cv2.filter2D(img_s, cv2.CV_32F, ky)
-
-    # 4. Magnitude
-    g = np.sqrt(gx**2 + gy**2)
-    g = (g / g.max()) * 255
-    g = g.astype(np.uint8)
-
-    # 5. Limiarização
-    edges = np.zeros_like(g, dtype=np.uint8)
-    edges[g > tau] = 255
-
-    return edges
+    return roberts_step_4(g, tau)
 
 def image_to_array(file, width=None, height=None):
     if file.lower().endswith(".npz"):

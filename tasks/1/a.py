@@ -198,25 +198,33 @@ def deviation_images(folder, avg="average.png", output="deviation", image_type="
     save_image(root, output, image_type)
 
 
-def covariance_image(folder, average="neighbors_average.npz", output="covariance/", img_type="npz"):
-    images = get_images(folder)
-    files = images["files"]
-    width = images["width"]
-    height = images["height"]
-    avg = image_to_array(average, width, height)
+def covariance_image(variation_folder="variation", neighbors_folder="neighbors", neighbors_average="neighbors_average.npz", output="covariance/", img_type="png"):
+    variation_images = get_images(variation_folder)
+    variation_files = variation_images["files"]
+    width = variation_images["width"]
+    height = variation_images["height"]
+    neighbors_images = get_images(neighbors_folder)
+    neighbors_files = neighbors_images["files"]
+    n_np_img_avg = image_to_array(neighbors_average, width, height)
     c = 1 / (width * height)
 
+    s = len(variation_files)
+    if s != len(variation_files):
+        raise Exception("Size Error")
+
     index = 0
-    for file in files:
-        # garantir tamanho
-        np_img = image_to_array(file, width, height)
-        # print(f'Imagem-{index}')
-        # print(np_img)
-        result = np_img * avg
+    for index in range(0, s):
+        variation_file = variation_files[index]
+        neighbors_file = neighbors_files[index]
+
+        v_np_img = image_to_array(variation_file, width, height)
+        n_np_img = image_to_array(neighbors_file, width, height)
+
+        result = n_np_img - n_np_img_avg
+        result = result * v_np_img
         result = result * c
         name = f"{output}{index}"
         save_image(result, name, img_type)
-        index += 1
     
 
 
@@ -308,17 +316,20 @@ def pixel_p(value):
 
 average_images("pictures")
 deviation_images("pictures")
+
+dev = image_average()
+dev_p = pixel_p(dev)
+
+
 variation_images("pictures")
 neighbors_images("pictures")
 average_images("neighbors", "neighbors_average", "npz")
-average_images("variation", "variation_average")
-variation_images("neighbors", "neighbors_average", "variation_n2/", "npz")
-covariance_image("variation_n2", img_type="png")
 
-dev = image_average()
+covariance_image()
+
+
+
 var = image_average("variation_average.png")
-
-dev_p = pixel_p(dev)
 var_p = pixel_p(var)
 
 print(f"% do devio médio: {dev_p}")

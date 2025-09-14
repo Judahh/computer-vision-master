@@ -221,19 +221,20 @@ def covariance_image(folder, average="neighbors_average.npz", output="covariance
 
 
 
-def deviation_image(input="deviation.png"):
+def image_average(input="deviation.png"):
     img = image_to_array(input)
     avg = np.mean(img)
-    print(f"Desvio {avg}")
+    print(f"Media da imagem {input}: {avg}")
+    return avg
 
 
-def get_arrays(folder, avg="average.png", dev="deviation.png"):
+def get_arrays(folder, add=["average.png"]):
     images = get_images(folder)
     files: list = images["files"]
     width = images["width"]
     height = images["height"]
-    files.append(avg)
-    files.append(dev)
+    for e in add:
+        files.append(e)
     a: list = []
     for file in files:
         print(file)
@@ -247,15 +248,11 @@ def plot_gray(imgs, output="graf.png"):
     Plota em escala de cinza todas as imagens e a média.
     NÃO inclui o desvio.
     """
-    idx_media = len(imgs) - 2  # média é penúltima
-    idx_desvio = len(imgs) - 1  # último é desvio → ignorado aqui
+    idx_media = len(imgs) - 1  # média é última
 
     plt.figure(figsize=(12, 6))
 
     for i, img in enumerate(imgs):
-        if i == idx_desvio:  # pula o desvio
-            continue
-
         gray = img.mean(axis=2).flatten()
 
         if i == idx_media:  # destaque para média
@@ -282,12 +279,10 @@ def plot_gray(imgs, output="graf.png"):
     print(f"Gráfico (sem desvio) salvo em '{output}'")
 
 
-def plot_desvio(imgs, output="graf_desvio.png"):
+def plot_desvio(img, output="graf_desvio.png"):
     """
     Plota apenas a imagem de desvio em grayscale.
     """
-    idx_desvio = len(imgs) - 1  # último é desvio
-    img = imgs[idx_desvio]
     gray = img.mean(axis=2).flatten()
 
     plt.figure(figsize=(12, 6))
@@ -308,15 +303,29 @@ def plot_desvio(imgs, output="graf_desvio.png"):
     plt.close()
     print(f"Gráfico do desvio salvo em '{output}'")
 
+def pixel_p(value):
+    return (value / 255) * 100
+
 average_images("pictures")
 deviation_images("pictures")
 variation_images("pictures")
 neighbors_images("pictures")
 average_images("neighbors", "neighbors_average", "npz")
+average_images("variation", "variation_average")
 variation_images("neighbors", "neighbors_average", "variation_n2/", "npz")
 covariance_image("variation_n2", img_type="png")
-deviation_image()
 
-# arrays = get_arrays("pictures")
-# plot_gray(arrays)
-# plot_desvio(arrays)
+dev = image_average()
+var = image_average("variation_average.png")
+
+dev_p = pixel_p(dev)
+var_p = pixel_p(var)
+
+print(f"% do devio médio: {dev_p}")
+print(f"% da variação média: {var_p}")
+
+arrays = get_arrays("pictures")
+
+plot_gray(arrays)
+plot_desvio(image_to_array("deviation.png"))
+plot_desvio(image_to_array("variation_average.png"), "graf_variation.png")

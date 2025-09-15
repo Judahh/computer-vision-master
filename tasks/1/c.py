@@ -162,27 +162,64 @@ def save_image(output, name, img_type):
         img_final.save(name)
     print(f"Imagem salva como {name}")
 
-# 1. Carregar imagem (em RGB e depois converter para grayscale)
-arr = image_to_array("building2-1.png")
-# arr = image_to_array("average.png")
-img_gray = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2GRAY)
+def generate_scales(path, scales):
+    img = Image.open(path)
+    W, H = img.size
+    images = []
 
-# 2. Aplicar detectores
-edges_roberts_50 = roberts_edge_det(img_gray, tau=50)
-edges_sobel_50 = sobel_edge_det(img_gray, tau=50)
+    for scale in scales:
+        if scale < 1:
+            # Zoom out → reduz resolução (igual você já fazia)
+            new_size = (int(W * scale), int(H * scale))
+            scaled_img = img.resize(new_size, Image.Resampling.LANCZOS)
 
-edges_roberts_100 = roberts_edge_det(img_gray, tau=100)
-edges_sobel_100 = sobel_edge_det(img_gray, tau=100)
+        else:
+            # Zoom in → crop central e depois resize de volta
+            crop_w, crop_h = int(W / scale), int(H / scale)
+            left = (W - crop_w) // 2
+            top = (H - crop_h) // 2
+            right = left + crop_w
+            bottom = top + crop_h
 
-# Canny com dois thresholds
-edges_canny_1 = cv2.Canny(img_gray, 50, 100)
-edges_canny_2 = cv2.Canny(img_gray, 100, 200)
+            cropped = img.crop((left, top, right, bottom))
+            scaled_img = cropped.resize((W, H), Image.Resampling.LANCZOS)
 
-# 3. Salvar resultados
-save_image(img_gray, "gray", "png")
-save_image(edges_roberts_50, "edges_roberts_50", "png")
-save_image(edges_sobel_50, "edges_sobel_50", "png")
-save_image(edges_roberts_100, "edges_roberts_100", "png")
-save_image(edges_sobel_100, "edges_sobel_100", "png")
-save_image(edges_canny_1, "edges_canny_50_100", "png")
-save_image(edges_canny_2, "edges_canny_100_200", "png")
+        save_name = f"{path}_{str(scale).replace('.', '_')}x.jpg"
+        scaled_img.save(save_name)
+        images.append(save_name)
+
+        print(f"Salvo: {save_name} ({scaled_img.width}x{scaled_img.height} px)")
+
+    return images
+
+# Diferentes escalas para gerar
+scales = [0.25, 0.5, 1, 2, 4]  # 25%, 50%, 100%, 200%, 400%
+
+paths: list[str] = generate_scales("building2-1.png", scales)
+
+for path in paths:
+    # 1. Carregar imagem (em RGB e depois converter para grayscale)
+    arr = image_to_array(path)
+    # arr = image_to_array("average.png")
+    img_gray = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2GRAY)
+
+    # 2. Aplicar detectores
+    edges_roberts_50 = roberts_edge_det(img_gray, tau=50)
+    edges_sobel_50 = sobel_edge_det(img_gray, tau=50)
+
+    edges_roberts_100 = roberts_edge_det(img_gray, tau=100)
+    edges_sobel_100 = sobel_edge_det(img_gray, tau=100)
+
+    # Canny com dois thresholds
+    edges_canny_1 = cv2.Canny(img_gray, 50, 100)
+    edges_canny_2 = cv2.Canny(img_gray, 100, 200)
+
+    path = path.replace('.png', '').replace('.jpg', '')
+    # 3. Salvar resultados
+    save_image(img_gray, f"{path}_gray", "png")
+    save_image(edges_roberts_50, f"{path}_edges_roberts_50", "png")
+    save_image(edges_sobel_50, f"{path}_edges_sobel_50", "png")
+    save_image(edges_roberts_100, f"{path}_edges_roberts_100", "png")
+    save_image(edges_sobel_100, f"{path}_edges_sobel_100", "png")
+    save_image(edges_canny_1, f"{path}_edges_canny_50_100", "png")
+    save_image(edges_canny_2, f"{path}_edges_canny_100_200", "png")

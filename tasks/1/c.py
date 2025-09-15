@@ -164,6 +164,7 @@ def save_image(output, name, img_type):
 
 # 1. Carregar imagem (em RGB e depois converter para grayscale)
 arr = image_to_array("building2-1.png")
+# arr = image_to_array("average.png")
 img_gray = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2GRAY)
 
 # 2. Aplicar detectores

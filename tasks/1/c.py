@@ -15,24 +15,36 @@ def linear_filter(I: np.ndarray, A: np.ndarray) -> np.ndarray:
     """
     Implementação manual de filtro linear 2D por convolução.
     I: imagem (numpy array 2D)
-    A: máscara do filtro (numpy array m x m, com m ímpar)
+    A: máscara do filtro (numpy array m x m, pode ser par ou ímpar)
     """
-    m = A.shape[0]  # tamanho do kernel (supomos quadrado e ímpar)
-    assert m % 2 == 1, "O tamanho da máscara deve ser ímpar"
-    
-    offset = m // 2
+    m = A.shape[0]  # tamanho do kernel (supomos quadrado)
     N, M = I.shape
     IA = np.zeros_like(I, dtype=np.float64)
 
-    # Percorrer cada pixel da imagem
-    for i in range(offset, N - offset):
-        for j in range(offset, M - offset):
-            # Extrair vizinhança
-            region = I[i - offset:i + offset + 1, j - offset:j + offset + 1]
-            # Produto elemento a elemento e soma
-            IA[i, j] = np.sum(A * region)
+    if m % 2 == 1:
+        # Caso ímpar: centro está bem definido
+        offset = m // 2
+        i_start, i_end = offset, N - offset
+        j_start, j_end = offset, M - offset
+        
+        for i in range(i_start, i_end):
+            for j in range(j_start, j_end):
+                region = I[i - offset:i + offset + 1, j - offset:j + offset + 1]
+                IA[i, j] = np.sum(A * region)
 
-    # Normalizar para valores válidos (0-255 se imagem)
+    else:
+        # Caso par: usar offset "meio a meio"
+        offset = m // 2
+        i_start, i_end = offset - 1, N - offset
+        j_start, j_end = offset - 1, M - offset
+        
+        for i in range(i_start, i_end):
+            for j in range(j_start, j_end):
+                region = I[i - offset + 1:i + offset + 1,
+                           j - offset + 1:j + offset + 1]
+                IA[i, j] = np.sum(A * region)
+
+    # Normalizar para [0,255] se imagem
     IA = np.clip(IA, 0, 255)
     return IA.astype(np.uint8)
 
@@ -155,8 +167,11 @@ arr = image_to_array("average.png")
 img_gray = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2GRAY)
 
 # 2. Aplicar detectores
-edges_roberts = roberts_edge_det(img_gray, tau=50)
-edges_sobel = sobel_edge_det(img_gray, tau=100)
+edges_roberts_50 = roberts_edge_det(img_gray, tau=50)
+edges_sobel_50 = sobel_edge_det(img_gray, tau=50)
+
+edges_roberts_100 = roberts_edge_det(img_gray, tau=100)
+edges_sobel_100 = sobel_edge_det(img_gray, tau=100)
 
 # Canny com dois thresholds
 edges_canny_1 = cv2.Canny(img_gray, 50, 100)
@@ -164,7 +179,9 @@ edges_canny_2 = cv2.Canny(img_gray, 100, 200)
 
 # 3. Salvar resultados
 save_image(img_gray, "gray", "png")
-save_image(edges_roberts, "edges_roberts", "png")
-save_image(edges_sobel, "edges_sobel", "png")
+save_image(edges_roberts_50, "edges_roberts_50", "png")
+save_image(edges_sobel_50, "edges_sobel_50", "png")
+save_image(edges_roberts_100, "edges_roberts_100", "png")
+save_image(edges_sobel_100, "edges_sobel_100", "png")
 save_image(edges_canny_1, "edges_canny_50_100", "png")
 save_image(edges_canny_2, "edges_canny_100_200", "png")

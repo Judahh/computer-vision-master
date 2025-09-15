@@ -193,7 +193,7 @@ def generate_scales(path, scales):
     return images
 
 # Diferentes escalas para gerar
-scales = [0.25, 0.5, 1, 2, 4]  # 25%, 50%, 100%, 200%, 400%
+scales = [1, 2, 3, 4, 5]  # 100%, 200%, 300%, 400%, 500%
 
 paths: list[str] = generate_scales("building2-1.png", scales)
 

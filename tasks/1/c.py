@@ -64,8 +64,8 @@ def roberts_step_2(img_s: np.ndarray):
         [-1, 1],
         [1, -1]
     ], dtype=np.float32)
-    gx = linear_filter(kx, img_s)
-    gy = linear_filter(ky, img_s)
+    gx = linear_filter(img_s, kx)
+    gy = linear_filter(img_s, ky)
     return gx, gy
 
 
@@ -81,8 +81,8 @@ def sobel_step_2(img_s: np.ndarray):
         [-2, 0, 2],
         [-1, 0, 1]
     ], dtype=np.float32)
-    gx = linear_filter(kx, img_s)
-    gy = linear_filter(ky, img_s)
+    gx = linear_filter(img_s, kx)
+    gy = linear_filter(img_s, ky)
     return gx, gy
 
 
@@ -163,7 +163,7 @@ def save_image(output, name, img_type):
     print(f"Imagem salva como {name}")
 
 # 1. Carregar imagem (em RGB e depois converter para grayscale)
-arr = image_to_array("average.png")
+arr = image_to_array("building2-1.png")
 img_gray = cv2.cvtColor(arr.astype(np.uint8), cv2.COLOR_RGB2GRAY)
 
 # 2. Aplicar detectores

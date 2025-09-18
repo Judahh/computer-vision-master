@@ -118,7 +118,7 @@ def apply_filters_cv2(image, ksize=5):
     # filtro Mediano
     median_filtered = cv2.medianBlur(image, ksize)
     # ambos
-    both_filtered = cv2.medianBlur(gauss_filtered, ksize)
+    both_filtered = cv2.GaussianBlur(median_filtered, (ksize, ksize), 0)
     return gauss_filtered, median_filtered, both_filtered
 
 def apply_filters(image, ksize=5):
@@ -131,8 +131,8 @@ def apply_filters(image, ksize=5):
             image[:, :, c], ksize, sigma=1.0
         )
         median_filtered[:, :, c] = median_filter(image[:, :, c], ksize)
-        both_filtered[:, :, c] = median_filter(
-            gauss_filtered[:, :, c], ksize
+        both_filtered[:, :, c] = separable_gaussian_filter(
+            median_filtered[:, :, c], ksize, sigma=1.0
         )
 
     return gauss_filtered, median_filtered, both_filtered
@@ -210,3 +210,27 @@ save_image(both_filt_cv_g, "cv2_gaussian+mediana_ruido_gaussiano", "png")
 save_image(gauss_filt_cv_sp, "cv2_gaussian_ruido_sal_pimenta", "png")
 save_image(median_filt_cv_sp, "cv2_mediana_ruido_sal_pimenta", "png")
 save_image(both_filt_cv_sp, "cv2_gaussian+mediana_ruido_sal_pimenta", "png")
+
+# Aplicar filtros
+gauss_filt_g, median_filt_g, both_filt_g, = apply_filters(noisy_gaussian, 3)
+gauss_filt_sp, median_filt_sp, both_filt_sp = apply_filters(noisy_sp, 3)
+gauss_filt_cv_g, median_filt_cv_g, both_filt_cv_g, = apply_filters_cv2(noisy_gaussian, 3)
+gauss_filt_cv_sp, median_filt_cv_sp, both_filt_cv_sp = apply_filters_cv2(noisy_sp, 3)
+
+# save images with filter
+save_image(gauss_filt_g, "gaussian_ruido_gaussiano_3", "png")
+save_image(median_filt_g, "mediana_ruido_gaussiano_3", "png")
+save_image(both_filt_g, "gaussian+mediana_ruido_gaussiano_3", "png")
+
+save_image(gauss_filt_sp, "gaussian_ruido_sal_pimenta_3", "png")
+save_image(median_filt_sp, "mediana_ruido_sal_pimenta_3", "png")
+save_image(both_filt_sp, "gaussian+mediana_ruido_sal_pimenta_3", "png")
+
+# versões OpenCV
+save_image(gauss_filt_cv_g, "cv2_gaussian_ruido_gaussiano_3", "png")
+save_image(median_filt_cv_g, "cv2_mediana_ruido_gaussiano_3", "png")
+save_image(both_filt_cv_g, "cv2_gaussian+mediana_ruido_gaussiano_3", "png")
+
+save_image(gauss_filt_cv_sp, "cv2_gaussian_ruido_sal_pimenta_3", "png")
+save_image(median_filt_cv_sp, "cv2_mediana_ruido_sal_pimenta_3", "png")
+save_image(both_filt_cv_sp, "cv2_gaussian+mediana_ruido_sal_pimenta_3", "png")

@@ -125,7 +125,7 @@ def corners_detector(img, N=3, tau=1e-4):
 img_synthetic = np.zeros((200, 200), dtype=np.uint8)
 cv2.rectangle(img_synthetic, (50, 50), (150, 150), 255, -1)
 
-corners, response = corners_detector(img_synthetic, N=3, tau=1e-4)
+corners, response = corners_detector(img_synthetic, N=3, tau=0.05)
 
 # Visualização
 img_color = cv2.cvtColor(img_synthetic, cv2.COLOR_GRAY2BGR)
@@ -162,7 +162,7 @@ save_image(sift_img, "synthetic_sift", "png")
 img = cv2.imread("building2-1.png", cv2.IMREAD_GRAYSCALE)
 
 
-corners, response = corners_detector(img, N=3, tau=1e-4)
+corners, response = corners_detector(img, N=3, tau=0.05)
 
 # Visualização
 img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
